@@ -22,3 +22,12 @@ docker ps
 docker stop name
 docker compose up -d
 docker compose down
+npm i bcryptjs
+npm i -D @types/bcrypts
+npx prisma studio
+npm i vitest vite-tsconfig-paths -D
+npm i -D @vitest/ui
+npm i dayjs
+npm i @fastify/jwt
+npm i supertest -D
+npm i @types/supertest -D

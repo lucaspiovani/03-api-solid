@@ -1,31 +1,33 @@
 import fastify from 'fastify'
-import { z } from 'zod'
-import { prisma } from './lib/prisma.js'
+import { userRoutes } from './http/controllers/users/routes'
+import { ZodError } from 'zod'
+import fastifyJwt from '@fastify/jwt'
+import { env } from './env'
+import { gymsRoutes } from './http/controllers/gyms/routes'
+import { checkInsRoutes } from './http/controllers/check-ins/route'
 
 export const app = fastify()
 
-// prisma.user.create({
-//   data: {
-//     name: 'Diego Fernandes',
-//     email: 'diego@rocketseat.com.br',
-//   },
-// })
+app.register(fastifyJwt, {
+  secret: env.JWT_SECRET,
+})
 
-app.post('/users', async (request, reply) => {
-  const registerBodySchema = z.object({
-    name: z.string(),
-    email: z.string().email(),
-    password: z.string().min(6),
-  })
-  const { name, email, password } = registerBodySchema.parse(request.body)
+app.register(userRoutes)
+app.register(gymsRoutes)
+app.register(checkInsRoutes)
 
-  await prisma.user.create({
-    data: {
-      name,
-      email,
-      password_hash: password,
-    },
-  })
+app.setErrorHandler(async (error, _, reply) => {
+  if (error instanceof ZodError) {
+    return reply
+      .status(400)
+      .send({ message: 'Validation error', issues: error.format() })
+  }
 
-  return reply.status(201).send()
+  if (process.env.NODE_ENV !== 'production') {
+    console.error(error)
+  } else {
+    // Here you could log the error to an external service tool like Datadog, Sentry, NewRelic, etc.
+  }
+
+  return reply.status(500).send({ message: 'Internal server error' })
 })
