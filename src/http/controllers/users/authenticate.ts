@@ -18,9 +18,26 @@ export async function authenticate(
 
     const { user } = await authenticateUseCase.execute({ email, password })
 
-    const token = await reply.jwtSign({}, { sign: { sub: user.id } })
+    const token = await reply.jwtSign(
+      { sub: user.id, role: user.role }
+    )
 
-    return reply.status(200).send({ token })
+    const refreshToken = await reply.jwtSign(
+      { sub: user.id, role: user.role },
+      { sign: { expiresIn: '7d' } }
+    )
+
+    return reply
+      .setCookie('refreshToken', refreshToken, {
+        path: '/',
+        secure: true,
+        sameSite: true,
+        httpOnly: true,
+      })
+      .status(200)
+      .send({
+        token,
+      })
   } catch (error) {
     if (error instanceof InvalidCredentialsError) {
       return reply.status(400).send({ message: error.message })
